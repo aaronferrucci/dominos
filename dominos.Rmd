@@ -1,0 +1,136 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+From [538 Riddler](https://fivethirtyeight.com/features/can-you-eat-an-apple-like-a-toddler/)
+
+> Riddler Express
+> 
+> From Dee Harley comes a devilish matter of dominos:
+> 
+> In a set of dominos, each tile has two sides with a number of dots on each side: zero, one, two, three, four, five or six. There are 28 total tiles, with each number of dots appearing alongside each other number (including itself) on a single tile.
+> 
+> Question 1: What is the probability of drawing a “double” from a set of dominoes — that is, a tile with the same number on both sides?
+> 
+> Question 2: Now you pick a random tile from the set and uncover only one side, revealing that it has six dots. What’s the probability that this tile is a double, with six on both sides?
+> 
+
+First a bit on domino tiles. A tile is a pair of numbers, each number in [0, 6]. The first number is unconstrained (but not uniform!). The second number is also in [0, 6], but must be greater than or equal to the first number.
+
+Here's a convenient way to visualize the tiles:
+
+```
+(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)
+        (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6)
+                (2, 2), (2, 3), (2, 4), (2, 5), (2, 6)
+                        (3, 3), (3, 4), (3, 5), (3, 6)
+                                (4, 4), (4, 5), (4, 6)
+                                        (5, 5), (5, 6)
+                                                (6, 6)
+```
+
+Down to business. I'll make a data.frame for the 28 tiles. 
+Here's a vector for the first number, walking the tile list column-wise left-to-right:
+```{r}
+x1 <- c(0, 0:1, 0:2, 0:3, 0:4, 0:5, 0:6)
+```
+
+Here's the second number, again working column-wise:
+```{r}
+r <-function(n, expr) { replicate(n, expr)}
+x2 <- c(r(1, 0), r(2, 1), r(3, 2), r(4, 3), r(5, 4), r(6, 5), r(7, 6))
+```
+
+And here's my data frame:
+```{r}
+dominoes <- data.frame(x1=x1, x2=x2)
+```
+
+Now for some sanity checks. I had better have 28 tiles:
+```{r}
+nrow(dominoes)
+```
+
+``x1`` should be between 0 and 6 inclusive.
+```{r}
+summary(dominoes$x1)
+```
+
+Min and max are ok, but what about the mean? Looking at the tile list again, I see that, row-wise, ``x1`` should have 7 0's, 6 1's, ... 2 5's and 1 6. 
+```{r}
+sum(r(7, 0), r(6, 1), r(5, 2), r(4,3), r(3,4), r(2,5), r(1,6)) / 28
+```
+Yep, that matches the mean value.
+
+Looking at ``x2``, it's also supposed to be between 0 and 6 inclusive.
+```{r}
+summary(dominoes$x2)
+```
+
+To check the mean, looking at ``x2`` by row, it's made of numbers 0-6, 1-6, 2-6, ..., 5-6 and 6.
+```{r}
+sum(0:6, 1:6, 2:6, 3:6, 4:6, 5:6, 6) / 28
+```
+... and that's a match.
+
+``x2`` is supposed to be greater than or equal to ``x1`` for every tile.
+```{r}
+dominoes[dominoes$x2 < dominoes$x1,]
+```
+
+Now I can plot my dominoes.
+```{r}
+library(ggplot2)
+ggplot(dominoes, aes(x=x2, y=x1, label=sprintf("(%d, %d)", x1, x2))) + scale_y_reverse() + geom_text() + theme_void()
+```
+
+Ok! I think I can finally consider the questions.
+
+Q1: what's the probability of drawing a "double"? These are the dominoes along the diagonal; there are 7 of them, out of 28, so the answer should be 1/4.
+```{r}
+nrow(dominoes[dominoes$x1 == dominoes$x2,]) / nrow(dominoes)
+```
+
+Q2: given that a drawn tile has a 6 on one end, what's the probability that it's a double? This tile is among the 7 in the right-most column; only one of those is a double, so the answer should be 1/7.
+```{r}
+nrow(dominoes[dominoes$x1 == 6 & dominoes$x2 == 6,]) / nrow(dominoes[dominoes$x1 == 6 | dominoes$x2 == 6,])
+```
+
+Theory is fine, but how about a supporting simulation? I'll draw one hundred thousand dominoes and see if my sample is close to the theoretical answers.
+
+```{r}
+draws <- dominoes[sample(nrow(dominoes), 100000, replace=T),]
+```
+
+Sanity check: is my sampling fair (does it choose each domino with equal likelihood)? I'll plot each domino, with jitter and low alpha; if one domino or another is favored it should show up as a darker area.
+
+```{r}
+ggplot(draws, aes(x=x2, y=x1, label=sprintf("(%d, %d)", x1, x2))) + geom_jitter(width=0.25, height=0.25, alpha=0.002)  + scale_y_reverse() + geom_text(vjust=3) + theme_void()
+```
+
+The distribution seems fair. Now let's focus on doubles: the diagonal in the plot.
+```{r}
+draws$double <- draws$x1 == draws$x2
+ggplot(draws, aes(x=x2, y=x1, color=x1==x2, label=sprintf("(%d, %d)", x1, x2))) + geom_jitter(width=0.25, height=0.25, alpha=0.01)  + scale_y_reverse() + geom_text(vjust=3) + theme_void() + theme(legend.position="none")
+```
+
+```{r}
+nrow(draws[draws$x1 == draws$x2,]) / nrow(draws)
+```
+
+Pretty close to the theoretical value!
+
+Now looking at sixes, and the six double:
+```{r}
+ggplot(draws, aes(x=x2, y=x1, color=as.factor((x1==6) + (x2==6)), label=sprintf("(%d, %d)", x1, x2))) + geom_jitter(width=0.25, height=0.25, alpha=0.01) + scale_y_reverse() + geom_text(vjust=3) + theme_void() + theme(legend.position="none")
+```
+
+```{r}
+nrow(draws[draws$x1 == 6 & draws$x2 == 6,]) / nrow(draws[draws$x1 == 6 | draws$x2 == 6,])
+```
+
+Close enough to the predicted 1/7.
+
