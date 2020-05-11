@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "538 Riddler: Dominos"
 output:
   html_document:
     df_print: paged
@@ -133,4 +133,6 @@ nrow(draws[draws$x1 == 6 & draws$x2 == 6,]) / nrow(draws[draws$x1 == 6 | draws$x
 ```
 
 Close enough to the predicted 1/7.
+
+Source code is [here](https://github.com/aaronferrucci/dominos)
 
