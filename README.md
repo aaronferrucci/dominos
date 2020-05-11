@@ -5,5 +5,5 @@
 ![alt text](https://github.com/aaronferrucci/dominos/blob/master/sixes.png
 "sixes")
 
-Here's the notebook, hosted [on RPubs](https://rpubs.com/aaronferrucci/dominos2)
+Here's the notebook, hosted [on RPubs](https://rpubs.com/aaronferrucci/dominos)
 
