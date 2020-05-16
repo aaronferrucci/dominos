@@ -94,7 +94,7 @@ Q1: what's the probability of drawing a "double"? These are the dominoes along t
 nrow(dominoes[dominoes$x1 == dominoes$x2,]) / nrow(dominoes)
 ```
 
-Q2: given that a drawn tile has a 6 on one end, what's the probability that it's a double? This tile is among the 7 in the right-most column; only one of those is a double, so the answer should be 1/7.
+Q2: given that a drawn tile has a 6 on one end, what's the probability that it's a double? This tile is among the 7 in the right-most column; only one of those is a double, so the answer should be 1/7. [edit: this answer is wrong! The correct analysis is to restrict attention to the 8 half-tiles which have a 6; 2 of them have a 6 on the other half-tile. ]
 ```{r}
 nrow(dominoes[dominoes$x1 == 6 & dominoes$x2 == 6,]) / nrow(dominoes[dominoes$x1 == 6 | dominoes$x2 == 6,])
 ```
